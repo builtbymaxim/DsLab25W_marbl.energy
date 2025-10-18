@@ -1,0 +1,8 @@
+data_dir: "${DATA_DIR:-/work/data}"
+countries_primary: ["GB","PL","ES","SE"]   # SE bei Bedarf auf FI/NO ändern
+countries_backup:  ["BE","NL"]
+window_days: 3650
+spike_thresholds:
+  price_eur_mwh: { positive: 250, negative: -50 }
+quality_rules:
+  min_coverage_pct: 95
