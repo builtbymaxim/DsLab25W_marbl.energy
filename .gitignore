@@ -8,3 +8,6 @@ __pycache__/
 data/**
 !data/.gitkeep
 .vscode/
+/data/**
+!/data/.gitkeep
+.vscode/
