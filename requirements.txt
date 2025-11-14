@@ -8,3 +8,4 @@ python-dotenv>=1.0
 typer>=0.12,<1
 pydantic>=2.8,<3
 pyarrow>=17,<18
+xarray
