@@ -9,3 +9,5 @@ typer>=0.12,<1
 pydantic>=2.8,<3
 pyarrow>=17,<18
 xarray
+cdsapi
+netCDF4
