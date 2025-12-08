@@ -5,9 +5,12 @@ __pycache__/
 venv/
 .env
 
-# Change 'data/' to '/data/' to only ignore the root folder
-/data/ 
+# IGNORE CONTENTS, NOT THE FOLDER ITSELF
+/data/*
+
+# WHITELIST (Un-ignore) SPECIFIC SUBFOLDERS
 !/data/.gitkeep
+!/data/processed/
 
 config/secrets.env
 .DS_Store
