@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 venv/
 .env
+secrets.env
 
 # IGNORE CONTENTS, NOT THE FOLDER ITSELF
 /data/*
