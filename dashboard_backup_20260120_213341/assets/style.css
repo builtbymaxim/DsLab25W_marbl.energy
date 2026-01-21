@@ -1,0 +1,72 @@
+/*
+ * MARBL Dashboard Custom Styles
+ * Author: MARBL Dashboard Team
+ * Date: 2026-01-16
+ */
+
+/* Main container adjustments */
+.main .block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+/* Header styling */
+h1 {
+    color: #1f77b4;
+    font-weight: 600;
+}
+
+h2, h3 {
+    color: #2c3e50;
+}
+
+/* Metric cards */
+[data-testid="stMetric"] {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+[data-testid="stMetricLabel"] {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+[data-testid="stMetricValue"] {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Sidebar styling */
+[data-testid="stSidebar"] {
+    background-color: #f8f9fa;
+}
+
+[data-testid="stSidebar"] h2 {
+    color: #1f77b4;
+}
+
+/* Info boxes */
+.stAlert {
+    border-radius: 8px;
+}
+
+/* Tables */
+.stDataFrame {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Expander styling */
+.streamlit-expanderHeader {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+/* Divider */
+hr {
+    margin: 1.5rem 0;
+    border-color: #e9ecef;
+}

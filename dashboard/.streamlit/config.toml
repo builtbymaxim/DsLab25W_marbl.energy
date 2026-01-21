@@ -1,0 +1,16 @@
+# Streamlit configuration for MARBL Dashboard
+
+[theme]
+# MARBL brand colors - teal/navy palette from marbl.energy
+primaryColor = "#00B4BC"           # Teal - CTAs, links, accents
+backgroundColor = "#F5F7FA"        # Light grey - main canvas
+secondaryBackgroundColor = "#FFFFFF"  # White - cards, panels
+textColor = "#0B253F"              # Dark navy - headings, body text
+font = "sans serif"
+
+[server]
+headless = true
+port = 8501
+
+[browser]
+gatherUsageStats = false
