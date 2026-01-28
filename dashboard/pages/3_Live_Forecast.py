@@ -643,6 +643,10 @@ def main():
         # Filter recent_actual for visualization (last 48h before forecast)
         if not recent_actual.empty:
             cutoff_time = forecast_datetime - timedelta(hours=48)
+            # Handle timezone-aware vs naive comparison
+            if recent_actual.index.tz is not None:
+                # Index is timezone-aware, make cutoff_time aware too
+                cutoff_time = pd.Timestamp(cutoff_time).tz_localize(recent_actual.index.tz)
             recent_actual = recent_actual[recent_actual.index >= cutoff_time]
 
     # Calculate data freshness
