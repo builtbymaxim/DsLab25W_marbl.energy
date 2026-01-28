@@ -285,15 +285,18 @@ def get_custom_css() -> str:
     [data-testid="stPlotlyChart"] {{
         background-color: {MARBL_COLORS['white']};
         border-radius: 12px;
-        padding: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
         box-shadow: 0 2px 8px rgba(11, 37, 63, 0.08);
         overflow: hidden;
+        box-sizing: border-box;
     }}
 
-    /* Fix chart overflow - ensure charts don't extend beyond container */
+    /* Ensure charts fit within container width */
     [data-testid="stPlotlyChart"] > div {{
         max-width: 100% !important;
         overflow: hidden !important;
+        box-sizing: border-box;
     }}
 
     [data-testid="stPlotlyChart"] .js-plotly-plot {{

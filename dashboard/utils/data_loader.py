@@ -163,6 +163,73 @@ def load_masterset_filtered(
     return df
 
 
+@st.cache_data(ttl=3600)
+def load_hourly_prices(
+    zone: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+) -> pd.DataFrame:
+    """
+    Load hourly prices from preprocessed data (price-only, no weather).
+
+    This function provides access to the full price history without
+    being limited by weather data availability.
+
+    Parameters
+    ----------
+    zone : str
+        The bidding zone identifier.
+    start_date : str, optional
+        Start date in format 'YYYY-MM-DD'. If None, no start filter.
+    end_date : str, optional
+        End date in format 'YYYY-MM-DD'. If None, no end filter.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with datetime index and 'price_eur_mwh' column.
+    """
+    if zone not in VALID_ZONES:
+        raise ValueError(f"Zone must be one of {VALID_ZONES}, got: {zone}")
+
+    file_path = DATA_DIR.parent / "notebooks" / "02_preprocessing" / "data" / "clean" / f"{zone}_preprocessed.csv"
+
+    if not file_path.exists():
+        raise FileNotFoundError(f"Preprocessed data not found: {file_path}")
+
+    # Load wide format data
+    df_wide = pd.read_csv(file_path)
+
+    # Melt from wide to long format
+    df_long = df_wide.melt(
+        id_vars=["date"],
+        var_name="hour_str",
+        value_name="price_eur_mwh"
+    )
+
+    # Extract hour and create timestamp
+    df_long["hour"] = df_long["hour_str"].str.replace("h", "").astype(int)
+    df_long["timestamp"] = pd.to_datetime(df_long["date"]) + pd.to_timedelta(df_long["hour"], unit="h")
+
+    # Set index and sort
+    df_long = df_long.set_index("timestamp").sort_index()
+    df_long = df_long[["price_eur_mwh"]]
+
+    # Apply date filters (using naive timestamps)
+    if start_date is not None:
+        start_ts = pd.to_datetime(start_date)
+        df_long = df_long[df_long.index >= start_ts]
+    if end_date is not None:
+        # Add 1 day to include the full end date
+        end_ts = pd.to_datetime(end_date) + pd.Timedelta(days=1)
+        df_long = df_long[df_long.index < end_ts]
+
+    # Remove any duplicates that might exist from DST transitions
+    df_long = df_long[~df_long.index.duplicated(keep="first")]
+
+    return df_long
+
+
 # --- Aggregation Functions ---
 def get_daily_prices(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -249,7 +316,7 @@ def get_data_summary(df: pd.DataFrame) -> dict:
 
 def get_date_range(zone: str) -> tuple:
     """
-    Get the available date range for a zone.
+    Get the available date range for a zone from masterset (price + weather).
 
     Parameters
     ----------
@@ -263,6 +330,37 @@ def get_date_range(zone: str) -> tuple:
     """
     df = load_masterset(zone)
     return df.index.min(), df.index.max()
+
+
+def get_price_date_range(zone: str) -> tuple:
+    """
+    Get the available date range for prices (from preprocessed data).
+
+    This returns the full price data range, which extends beyond the
+    masterset range (masterset is limited by weather data availability).
+
+    Parameters
+    ----------
+    zone : str
+        The bidding zone identifier.
+
+    Returns
+    -------
+    tuple
+        (min_date, max_date) as pandas Timestamp objects.
+    """
+    if zone not in VALID_ZONES:
+        raise ValueError(f"Zone must be one of {VALID_ZONES}, got: {zone}")
+
+    file_path = PREPROCESSED_DIR / f"{zone}_preprocessed.csv"
+
+    if not file_path.exists():
+        # Fall back to masterset range if preprocessed not available
+        return get_date_range(zone)
+
+    df = pd.read_csv(file_path, usecols=["date"])
+    df["date"] = pd.to_datetime(df["date"])
+    return df["date"].min(), df["date"].max()
 
 
 # --- Validation Functions ---
@@ -281,6 +379,106 @@ def check_data_availability() -> dict:
         file_path = DATA_DIR / "processed" / f"{zone}_masterset.csv"
         availability[zone] = file_path.exists()
     return availability
+
+
+# --- Preprocessed Data (for Daily Mean History Chart) ---
+# Path to preprocessed data from analysis notebooks
+PREPROCESSED_DIR = DATA_DIR.parent / "notebooks" / "02_preprocessing" / "data" / "clean"
+
+
+@st.cache_data(ttl=3600)
+def load_preprocessed_data(zone: str) -> pd.DataFrame:
+    """
+    Load preprocessed daily data from the analysis pipeline.
+
+    This data contains 24 hourly price columns (h00-h23) per day,
+    used in the 03_analysis notebooks for clustering.
+
+    Parameters
+    ----------
+    zone : str
+        The bidding zone identifier (DK1, ES, NO2).
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns:
+        - date: datetime
+        - h00, h01, ..., h23: hourly prices in EUR/MWh
+
+    Raises
+    ------
+    ValueError
+        If the zone identifier is not recognized.
+    FileNotFoundError
+        If the preprocessed file does not exist.
+    """
+    if zone not in VALID_ZONES:
+        raise ValueError(f"Zone must be one of {VALID_ZONES}, got: {zone}")
+
+    file_path = PREPROCESSED_DIR / f"{zone}_preprocessed.csv"
+
+    if not file_path.exists():
+        raise FileNotFoundError(f"Preprocessed data not found: {file_path}")
+
+    df = pd.read_csv(file_path)
+
+    # Parse date column
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], utc=True)
+
+    return df
+
+
+def calculate_daily_mean_prices(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculate daily mean prices from preprocessed hourly columns.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Preprocessed DataFrame with h00-h23 columns.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with columns:
+        - date: datetime
+        - daily_mean_price: average of all 24 hourly prices
+    """
+    # Identify hourly columns (h00, h01, ..., h23)
+    hour_cols = [col for col in df.columns if col.startswith("h") and len(col) == 3]
+    hour_cols = sorted(hour_cols)
+
+    if not hour_cols:
+        raise ValueError("No hourly columns (h00-h23) found in DataFrame")
+
+    # Calculate daily mean across all hours
+    result = df[["date"]].copy()
+    result["daily_mean_price"] = df[hour_cols].mean(axis=1)
+
+    return result
+
+
+def get_daily_mean_history(zone: str) -> pd.DataFrame:
+    """
+    Get the full daily mean price history for a zone.
+
+    Convenience function that loads preprocessed data and calculates
+    daily means in one step.
+
+    Parameters
+    ----------
+    zone : str
+        The bidding zone identifier.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with date and daily_mean_price columns.
+    """
+    df = load_preprocessed_data(zone)
+    return calculate_daily_mean_prices(df)
 
 
 # --- Cluster Data Loading Functions ---

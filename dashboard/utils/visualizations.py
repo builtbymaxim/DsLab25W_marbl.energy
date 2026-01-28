@@ -147,8 +147,140 @@ def create_multi_zone_prices(
         yaxis_title="Price (EUR/MWh)",
         template="plotly_white",
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend=dict(orientation="h", yanchor="top", y=0.99, xanchor="right", x=0.99),
         height=450,
+        margin=dict(l=60, r=40, t=60, b=60),
+        **MARBL_LAYOUT
+    )
+
+    return fig
+
+
+def create_daily_mean_history_chart(
+    df: pd.DataFrame,
+    zone: str,
+    title: Optional[str] = None,
+    height: int = 400
+) -> go.Figure:
+    """
+    Create a time series chart of daily mean electricity prices over multiple years.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with 'date' column and 'daily_mean_price' column.
+    zone : str
+        Zone identifier for color coding.
+    title : str, optional
+        Chart title. Defaults to 'Daily Mean Price History - {zone}'.
+    height : int
+        Chart height in pixels.
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure object with range selector buttons.
+    """
+    if title is None:
+        title = f"Daily Mean Price History - {zone}"
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=df["date"],
+            y=df["daily_mean_price"],
+            mode="lines",
+            name="Daily Mean Price",
+            line=dict(color=ZONE_COLORS.get(zone, MARBL_PRIMARY), width=0.8),
+            hovertemplate="Date: %{x|%Y-%m-%d}<br>Mean Price: %{y:.2f} EUR/MWh<extra></extra>"
+        )
+    )
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Date",
+        yaxis_title="Price (EUR/MWh)",
+        template="plotly_white",
+        hovermode="x unified",
+        height=height,
+        margin=dict(l=60, r=40, t=80, b=60),
+        xaxis=dict(
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1, label="1Y", step="year", stepmode="backward"),
+                    dict(count=3, label="3Y", step="year", stepmode="backward"),
+                    dict(count=5, label="5Y", step="year", stepmode="backward"),
+                    dict(step="all", label="All")
+                ]),
+                bgcolor="white",
+                activecolor=MARBL_PRIMARY,
+                font=dict(color=MARBL_NAVY)
+            ),
+            type="date"
+        ),
+        **MARBL_LAYOUT
+    )
+
+    return fig
+
+
+def create_multi_zone_daily_mean_chart(
+    data_dict: dict,
+    title: str = "Daily Mean Price Comparison Across Zones"
+) -> go.Figure:
+    """
+    Create a time series chart comparing daily mean prices across multiple zones.
+
+    Parameters
+    ----------
+    data_dict : dict
+        Dictionary mapping zone codes to DataFrames with 'date' and 'daily_mean_price'.
+    title : str
+        Chart title.
+
+    Returns
+    -------
+    go.Figure
+        Plotly figure object.
+    """
+    fig = go.Figure()
+
+    for zone, df in data_dict.items():
+        fig.add_trace(
+            go.Scatter(
+                x=df["date"],
+                y=df["daily_mean_price"],
+                mode="lines",
+                name=zone,
+                line=dict(color=ZONE_COLORS.get(zone, "#666666"), width=0.8),
+                hovertemplate=f"{zone}<br>Date: %{{x|%Y-%m-%d}}<br>Mean Price: %{{y:.2f}} EUR/MWh<extra></extra>"
+            )
+        )
+
+    fig.update_layout(
+        title=title,
+        xaxis_title="Date",
+        yaxis_title="Price (EUR/MWh)",
+        template="plotly_white",
+        hovermode="x unified",
+        legend=dict(orientation="h", yanchor="top", y=0.99, xanchor="right", x=0.99),
+        height=450,
+        margin=dict(l=60, r=40, t=80, b=60),
+        xaxis=dict(
+            rangeselector=dict(
+                buttons=list([
+                    dict(count=1, label="1Y", step="year", stepmode="backward"),
+                    dict(count=3, label="3Y", step="year", stepmode="backward"),
+                    dict(count=5, label="5Y", step="year", stepmode="backward"),
+                    dict(step="all", label="All")
+                ]),
+                bgcolor="white",
+                activecolor=MARBL_PRIMARY,
+                font=dict(color=MARBL_NAVY)
+            ),
+            type="date"
+        ),
         **MARBL_LAYOUT
     )
 
@@ -395,8 +527,9 @@ def create_cluster_centroids_chart(
         yaxis_title="Price (EUR/MWh)",
         template="plotly_white",
         xaxis=dict(tickmode="linear", dtick=2),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend=dict(orientation="h", yanchor="top", y=0.99, xanchor="right", x=0.99),
         height=450,
+        margin=dict(l=60, r=40, t=60, b=60),
         **MARBL_LAYOUT
     )
 
@@ -544,8 +677,9 @@ def create_forecast_chart(
         xaxis_title="Hour",
         yaxis_title="Price (EUR/MWh)",
         template="plotly_white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend=dict(orientation="h", yanchor="top", y=0.99, xanchor="right", x=0.99),
         height=400,
+        margin=dict(l=60, r=40, t=60, b=60),
         **MARBL_LAYOUT
     )
 
